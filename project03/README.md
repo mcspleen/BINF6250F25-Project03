@@ -67,7 +67,6 @@ This was my first encounter with Gibbs Sampling, and it is a concept I will prob
 
 ## Other member - Tiange
 This project was more challenging than the previous two. However, through some research and productive discussions with Jason, I gradually pinpointed the core solution: meticulous comprehension of the existing code modules (including their inputs, functions, and outputs) and establishing the logical flow between them. Before proceeding to implement the GibbsMotifFinder, I spent a considerable amount of time configuring the environment and importing necessary modules, some of which required sourcing from specific channels. This process provided valuable, hands-on exposure to environment management and configuration, which is an essential complement to the algorithmic, statistical, and IDE skills practiced during the assignment itself.
-=======
 
 # Generative AI Appendix
 The following generative AI resources were used for debugging, understanding concepts, and improving code efficiency:
