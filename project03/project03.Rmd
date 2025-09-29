@@ -1,6 +1,6 @@
 ---
 title: "BINF6250 Project 03"
-author: "Tiange Feng"
+author: "Jason and Tiange"
 date: "2025-09-26"
 output: 
   github_document:
@@ -26,10 +26,8 @@ reticulate::conda_install(packages=c("seqlogo"), forge=TRUE, channel="bioconda",
 ```{r}
 reticulate::conda_install(
   packages = 'pdf2svg',
-  # 使用 c() 包含所有需要搜索的通道
   channels = c('conda-forge', 'bioconda', 'defaults'),
   conda = 'auto',
-  # 移除错误的 forge=TRUE 参数
   additional_install_args = '--solver=libmamba'
 )
 ```
@@ -189,28 +187,3 @@ seqlogo.seqlogo(seqlogo.CompletePm(pfm = promoter_pfm.T),
     NameError: name 'COMPTRANS' is not defined. Did you mean: 'COMP_TRANS'?
 
 4.  Gemini: random functions
-
-# Problems unsolved
-
-1.  ~~Test function error\
-    ~~通过在 `from seq_ops import ...` 语句中加入 `COMP_TRANS`，你确保了在调用 `get_seq` 和 `reverse_complement` 之前，Python 的当前命名空间已经加载了 `COMP_TRANS` 变量。这样，当 `reverse_complement` 执行时，它就能成功找到所需的翻译表，程序也就能正常运行了。~~\
-    ~~请在你的 R Markdown 文件中进行这个修改，并重启 Python 会话（或 RStudio 会话）以清除之前的错误状态，然后再次运行代码。
-
-```         
-'\n            Because the gibbs sampling assumption is broken in just using promoters,\n            and because it takes very long time to randomly progress through so many\n            regions, for this example we will pre-filter for sequences that all contain\n            part of the shine-dalgarno motif:\n            '
-'\n            Because the gibbs sampling assumption is broken in just using promoters,\n            and because it takes very long time to randomly progress through so many\n            regions, for this example we will pre-filter for sequences that all contain\n            part of the shine-dalgarno motif:\n            '
-'\n            Because the gibbs sampling assumption is broken in just using promoters,\n            and because it takes very long time to randomly progress through so many\n            regions, for this example we will pre-filter for sequences that all contain\n            part of the shine-dalgarno motif:\n            '
-'\n            Because the gibbs sampling assumption is broken in just using promoters,\n            and because it takes very long time to randomly progress through so many\n            regions, for this example we will pre-filter for sequences that all contain\n            part of the shine-dalgarno motif:\n            '
-'\n            Because the gibbs sampling assumption is broken in just using promoters,\n            and because it takes very long time to randomly progress through so many\n            regions, for this example we will pre-filter for sequences that all contain\n            part of the shine-dalgarno motif:\n            '
-'\n            Because the gibbs sampling assumption is broken in just using promoters,\n            and because it takes very long time to randomly progress through so many\n            regions, for this example we will pre-filter for sequences that all contain\n            part of the shine-dalgarno motif:\n            '
-'\n            Because the gibbs sampling assumption is broken in just using promoters,\n            and because it takes very long time to randomly progress through so many\n            regions, for this example we will pre-filter for sequences that all contain\n            part of the shine-dalgarno motif:\n            '
-Traceback (most recent call last):
-  File "<string>", line 4, in <module>
-  File "/courses/BINF6250.202610/students/feng.tiang/project_03/seq_ops.py", line 39, in get_seq
-    promoter_seq = seq[(start-size-1):(start-1)]
-                   ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/courses/BINF6250.202610/students/feng.tiang/project_03/seq_ops.py", line 21, in reverse_complement
-    def get_seq(seq, start, end, strand, size):
-                             ^^^^^^^^^
-NameError: name 'COMPTRANS' is not defined. Did you mean: 'COMP_TRANS'?
-```
