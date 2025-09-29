@@ -61,7 +61,7 @@ Initial Convergence Check Implementation: We implemented a basic convergence che
 External Package Management: We experienced difficulties installing the seqlogo and pdf2svg packages correctly using reticulate::conda_install, particularly related to specifying the correct channels and resolving dependency conflicts with the forge=TRUE argument and Conda solver (requiring the addition of --solver=libmamba). Our program needs ipython environment to generate the result plot, where we had problems to locate and debug.
 
 # Personal Reflections
-<<<<<<< project03_PR
+
 ## Group Leader
 This was my first encounter with Gibbs Sampling, and it is a concept I will probably continue struggling with at least for a couple more weeks. I get dizzy with the several loops within loops we had to do for this algorithm and keeping track of what it all means. Tiange definitely carried me when mapping out the direction we needed to take to complete the GibbsMotifFinder function, but when focusing in on writing out the individual lines of code I was thankfully able to contribute ideas and have an understanding of what was at least happening in that block of code. I am hoping that in a few weeks I can revisit this project with confidence and make any changes that we missed in this first rendition of our Gibbs Sampling algorithm.
 
