@@ -69,8 +69,19 @@ This was my first encounter with Gibbs Sampling, and it is a concept I will prob
 This project was more challenging than the previous two. However, through some research and productive discussions with Jason, I gradually pinpointed the core solution: meticulous comprehension of the existing code modules (including their inputs, functions, and outputs) and establishing the logical flow between them. Before proceeding to implement the GibbsMotifFinder, I spent a considerable amount of time configuring the environment and importing necessary modules, some of which required sourcing from specific channels. This process provided valuable, hands-on exposure to environment management and configuration, which is an essential complement to the algorithmic, statistical, and IDE skills practiced during the assignment itself.
 
 # Generative AI Appendix
-The following generative AI resources were used for debugging, understanding concepts, and improving code efficiency:
+1.  Googled "yield" (python)\
+    [**`yield` pauses and saves state; `return` terminates.**](https://www.google.com/search?client=safari&sca_esv=861dc178219c5a10&rls=en&q=yield+pauses+and+saves+state%3B+return+terminates.&sa=X&ved=2ahUKEwiijL7t9PuPAxXDg4kEHahPOgQQxccNegUIiwEQAw&mstk=AUtExfBHwhHoWRb-HlKNjTlQ8FFThnClkWMlyCIYfbtR6UqIVMYwpyO_7Yh-letMs4CI9GgvoM5MWi85nvdbCu1zobFviPPOl2J37uByYeez1fO407msxk0BFSjJwPLK2Ti4Yu9k9dazT-Ypi_vUsZ7adWMvYWw-Qo2Y8o1oZw3BSMm33f4&csui=3)
 
-Google Search/Snippets: Clarification on the fundamental difference between the Python commands yield (pauses and saves state; creates a generator object) and return (immediately exits; returns a single value).
+    A `return` statement immediately exits the function, discarding its state. `yield` allows the function to be paused and resumed, enabling it to produce multiple values over time.
 
-Gemini (LLM): Assisted with debugging a NameError related to case sensitivity (COMPTRANS vs. COMP_TRANS), provided basic Python random function usage, and offered guidance on saving selected sequences to a FASTA file.
+    [**`yield` creates a generator object; `return` returns a value.**](https://www.google.com/search?client=safari&sca_esv=861dc178219c5a10&rls=en&q=yield+creates+a+generator+object%3B+return+returns+a+value.&sa=X&ved=2ahUKEwiijL7t9PuPAxXDg4kEHahPOgQQxccNegUIjgEQAw&mstk=AUtExfBHwhHoWRb-HlKNjTlQ8FFThnClkWMlyCIYfbtR6UqIVMYwpyO_7Yh-letMs4CI9GgvoM5MWi85nvdbCu1zobFviPPOl2J37uByYeez1fO407msxk0BFSjJwPLK2Ti4Yu9k9dazT-Ypi_vUsZ7adWMvYWw-Qo2Y8o1oZw3BSMm33f4&csui=3)
+
+    A function with `yield` becomes a generator function, which, when called, returns an iterable generator object. A function with `return` simply returns a single value.
+
+2.  Gemini: save a list of selected sequences to a FASTA file
+
+3.  Gemini: debug Test function\
+    NameError: name 'COMPTRANS' is not defined. Did you mean: 'COMP_TRANS'?
+
+4.  Gemini: random functions
+
