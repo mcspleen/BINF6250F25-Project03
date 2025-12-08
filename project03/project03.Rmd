@@ -48,48 +48,6 @@ from motif_ops import build_pfm, build_pwm, score_kmer, pfm_ic
 
 ```{python}
 
-import os
-os.chdir("/courses/BINF6250.202610/students/feng.tiang/project_03")
-```
-
-# Functions
-
-## Generate a list of sequences for test
-
-```{python}
-# Here we test your Gibbs sampler.
-# You do not need to edit this or the section below. This is the Driver program
-
-#read promoters, store in a list of strings
-dir_wk = "/courses/BINF6250.202610/students/feng.tiang/project_03"
-folder_seq = "data/GCF_000009045.1_ASM904v1_genomic.fna"
-seq_file = f"{dir_wk}/{folder_seq}"
-folder_gff = "data/GCF_000009045.1_ASM904v1_genomic.gff"
-gff_file= f"{dir_wk}/{folder_gff}"
-
-seqs = []
-
-for name, seq in get_fasta(seq_file): # For each entry in our FASTA file
-    for gff_entry in get_gff(gff_file): # For each entry in our GFF file
-        if gff_entry.type == 'CDS': # If this is a coding sequence
-            promoter_seq = get_seq(seq, gff_entry.start, gff_entry.end, gff_entry.strand, 50) # Extract 50 bp as a promoter
-    
-            """
-            Because the gibbs sampling assumption is broken in just using promoters,
-            and because it takes very long time to randomly progress through so many
-            regions, for this example we will pre-filter for sequences that all contain
-            part of the shine-dalgarno motif:
-            """
-            if "AGGAGG" in promoter_seq:
-                seqs.append(promoter_seq)
-```
-
-Use this "seqs" list to build my Gibbs Sampler
-
-## Build Gibbs Sampler
-
-```{python}
-
 import random
 
 def softmax(x):
@@ -125,7 +83,7 @@ def GibbsMotifFinder(sequences, k=10, iterations=1000, seed=42):
         
         rand_start = np.random.randint(0, max_start + 1)
         current_motifs.append(seq[rand_start : rand_start + k])
-
+    
     ic_history = []
 
     # 2. Iterative Sampling
@@ -181,17 +139,35 @@ def GibbsMotifFinder(sequences, k=10, iterations=1000, seed=42):
         # Print progress every 100 iterations
         if (it + 1) % 100 == 0:
             print(f"Iteration {it+1}: IC = {current_ic:.4f}")
-
-    return current_motifs, ic_history
+    
+    ppfm = build_pfm(current_motifs, k)
+    return ppfm, ic_history
+  
 ```
 
-## Run 
+## Generate a list of sequences for test
 
 ```{python}
-# Run the gibbs sampler:
-promoter_pfm = GibbsMotifFinder(seqs,10)
-print(promoter_pfm)
+# Here we test your Gibbs sampler.
+# You do not need to edit this or the section below. This is the Driver program
 
+#read promoters, store in a list of strings
+seq_file = "data/GCF_000009045.1_ASM904v1_genomic.fna"
+gff_file = "data/GCF_000009045.1_ASM904v1_genomic.gff"
+
+seqs = []
+
+for name, seq in get_fasta(seq_file): # For each entry in our FASTA file
+    for gff_entry in get_gff(gff_file): # For each entry in our GFF file
+        if gff_entry.type == 'CDS': # If this is a coding sequence
+            promoter_seq = get_seq(seq, gff_entry.start, gff_entry.end, gff_entry.strand, 50) # Extract 50 bp as a promoter
+    
+          
+            if "AGGAGG" in promoter_seq:
+                seqs.append(promoter_seq)
+
+# Run the gibbs sampler:
+promoter_pfm, ic_history = GibbsMotifFinder(seqs,10)
 # Plot the final pfm, SAVING it to a file instead of trying to display it
 seqlogo.seqlogo(seqlogo.CompletePm(pfm = promoter_pfm.T), 
                 file="motif_logo.png", 
