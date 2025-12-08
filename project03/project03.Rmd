@@ -97,7 +97,7 @@ def softmax(x):
     e_x = np.exp(x - np.max(x))
     return e_x / e_x.sum()
 
-def gibbs_motif_finder(sequences, k=10, iterations=1000, seed=42):
+def GibbsMotifFinder(sequences, k=10, iterations=1000, seed=42):
     """
     Runs the Gibbs Sampler to find a motif.
     
