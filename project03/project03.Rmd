@@ -92,69 +92,97 @@ Use this "seqs" list to build my Gibbs Sampler
 
 import random
 
-def GibbsMotifFinder (seqs, k, seed=42):
-    '''
-    Function to find a pfm from a list of strings using a Gibbs sampler
-    
-    Args: 
-        seqs (str list): a list of sequences, not necessarily in same lengths
-        k (int): the length of motif to find
-        seed (int, default=42): seed for np.random
+def softmax(x):
+    """Compute softmax values for each set of scores in x."""
+    e_x = np.exp(x - np.max(x))
+    return e_x / e_x.sum()
 
-    Returns:
-        pfm (numpy array): dimensions are 4xlength
+def gibbs_motif_finder(sequences, k=10, iterations=1000, seed=42):
+    """
+    Runs the Gibbs Sampler to find a motif.
+    
+    Args:
+        sequences (list): List of DNA strings.
+        k (int): Length of the motif to find.
+        iterations (int): Number of sampling steps (burn-in + sampling).
+        seed (int): Random seed for reproducibility.
         
-    '''
-    
+    Returns:
+        tuple: (final_motifs, information_content_history)
+    """
     np.random.seed(seed)
-    length_seqs = len(seqs)
+    random.seed(seed)
     
-    motifs_init = []
-    ic_hist = []
+    num_seqs = len(sequences)
     
-    stability_window = 50  
-    convergence_threshold = 1e-5
-    
-    for entry in range(0, length_seqs):
-        # randomly select the index number within that row
-        nucleotide_index = np.random.randint(0, 50-k)
-        # save the k-mer into motifs_init (list)
-        motif_picked = seqs[entry][nucleotide_index:nucleotide_index+k]
-        motifs_init.append(motif_picked)
-    
-    for samp_times in range(0, 100):
-        # randomly select the i-th line of seq (i ← Random(N) where N is number of DNA entries)
-        entry_index_picked = np.random.randint(0, length_seqs)
-        current_motif = motifs_init[:entry_index_picked] + motifs_init[entry_index_picked+1:]
-        pfm = build_pfm(current_motif, k)
-        ic = pfm_ic(pfm)
-        ic_hist.append(ic)
+    # 1. Random Initialization
+    # Select a random k-mer from each sequence to start
+    current_motifs = []
+    for seq in sequences:
+        max_start = len(seq) - k
+        if max_start < 0:
+            raise ValueError(f"Sequence shorter than k={k}")
+        
+        rand_start = np.random.randint(0, max_start + 1)
+        current_motifs.append(seq[rand_start : rand_start + k])
+
+    ic_history = []
+
+    # 2. Iterative Sampling
+    for it in range(iterations):
+        
+        # Select a holdout sequence index randomly
+        holdout_idx = np.random.randint(0, num_seqs)
+        holdout_seq = sequences[holdout_idx]
+        
+        # Create a subset of motifs excluding the holdout
+        subset_motifs = [current_motifs[i] for i in range(num_seqs) if i != holdout_idx]
+        
+        # Build PFM and PWM from the subset
+        pfm = build_pfm(subset_motifs, k)
         pwm = build_pwm(pfm)
         
-        ith_entry = seqs[entry_index_picked]
-        kmer_score_list = []
+        # Track Information Content (Convergence metric)
+        current_ic = pfm_ic(pfm)
+        ic_history.append(current_ic)
         
-        for kmer_index in range(0, 50-k):
-            motif_str = ith_entry[kmer_index:kmer_index+k]
-            motif_score = score_kmer(motif_str, pwm)
-            kmer_score_list.append(motif_score)
+        # Score all possible k-mers in the holdout sequence (score both Forward and Reverse Complement)
+        candidates = []
+        scores = []
+        
+        seq_len = len(holdout_seq)
+        
+        for start_idx in range(seq_len - k + 1):
+            # Forward k-mer
+            kmer_fwd = holdout_seq[start_idx : start_idx + k]
+            score_fwd = score_kmer(kmer_fwd, pwm)
             
-            # get key(index) from the max score, update the motifs_init
-            max_score = max(kmer_score_list)
-            max_index = kmer_score_list.index(max_score)
-            str_update = ith_entry[max_index:max_index+k]
-            motifs_init[entry_index_picked] = str_update
-        
-        if samp_times > 50:
-            window = ic_hist[-stability_window:]
-            max_change = max(window) - min(window)
-        
-            if max_change < convergence_threshold:
-                print(f"Convergence reached at iteration {j}. Max IC change: {max_change}")
-                return pfm
+            candidates.append(kmer_fwd)
+            scores.append(score_fwd)
             
-            elif samp_times == 99:
-                return pfm
+            # Reverse Complement k-mer
+            kmer_rc = reverse_complement(kmer_fwd)
+            score_rc = score_kmer(kmer_rc, pwm)
+            
+            candidates.append(kmer_rc)
+            scores.append(score_rc)
+            
+        # Probabilistic Selection
+        scores_array = np.array(scores)
+        probabilities = softmax(scores_array)
+        
+        # Select a new motif based on these weighted probabilities
+        chosen_index = np.random.choice(len(candidates), p=probabilities)
+        new_motif = candidates[chosen_index]
+        
+        # Update the motif list
+        current_motifs[holdout_idx] = new_motif
+        
+        # Print progress every 100 iterations
+        if (it + 1) % 100 == 0:
+            print(f"Iteration {it+1}: IC = {current_ic:.4f}")
+
+    return current_motifs, ic_history
 ```
 
 ## Run 
@@ -169,21 +197,3 @@ seqlogo.seqlogo(seqlogo.CompletePm(pfm = promoter_pfm.T),
                 file="motif_logo.png", 
                 format='png')
 ```
-
-# Generative AI usage
-
-1.  Googled "yield" (python)\
-    [**`yield` pauses and saves state; `return` terminates.**](https://www.google.com/search?client=safari&sca_esv=861dc178219c5a10&rls=en&q=yield+pauses+and+saves+state%3B+return+terminates.&sa=X&ved=2ahUKEwiijL7t9PuPAxXDg4kEHahPOgQQxccNegUIiwEQAw&mstk=AUtExfBHwhHoWRb-HlKNjTlQ8FFThnClkWMlyCIYfbtR6UqIVMYwpyO_7Yh-letMs4CI9GgvoM5MWi85nvdbCu1zobFviPPOl2J37uByYeez1fO407msxk0BFSjJwPLK2Ti4Yu9k9dazT-Ypi_vUsZ7adWMvYWw-Qo2Y8o1oZw3BSMm33f4&csui=3)
-
-    A `return` statement immediately exits the function, discarding its state. `yield` allows the function to be paused and resumed, enabling it to produce multiple values over time.
-
-    [**`yield` creates a generator object; `return` returns a value.**](https://www.google.com/search?client=safari&sca_esv=861dc178219c5a10&rls=en&q=yield+creates+a+generator+object%3B+return+returns+a+value.&sa=X&ved=2ahUKEwiijL7t9PuPAxXDg4kEHahPOgQQxccNegUIjgEQAw&mstk=AUtExfBHwhHoWRb-HlKNjTlQ8FFThnClkWMlyCIYfbtR6UqIVMYwpyO_7Yh-letMs4CI9GgvoM5MWi85nvdbCu1zobFviPPOl2J37uByYeez1fO407msxk0BFSjJwPLK2Ti4Yu9k9dazT-Ypi_vUsZ7adWMvYWw-Qo2Y8o1oZw3BSMm33f4&csui=3)
-
-    A function with `yield` becomes a generator function, which, when called, returns an iterable generator object. A function with `return` simply returns a single value.
-
-2.  Gemini: save a list of selected sequences to a FASTA file
-
-3.  Gemini: debug Test function\
-    NameError: name 'COMPTRANS' is not defined. Did you mean: 'COMP_TRANS'?
-
-4.  Gemini: random functions
