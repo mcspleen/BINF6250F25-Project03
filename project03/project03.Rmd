@@ -1,0 +1,175 @@
+---
+title: "BINF6250 Project 03"
+author: "Jason and Tiange"
+date: "2025-09-26"
+output: 
+  github_document:
+    toc: true
+    toc_depth: 2
+    html_preview: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE)
+library('reticulate')
+```
+
+# Preparation
+
+## Install packages
+
+```{r, install_seqlogo}
+
+reticulate::conda_install(packages=c("seqlogo"), forge=TRUE, channel="bioconda",conda="auto", additional_install_args="--solver=libmamba")
+```
+
+```{r}
+reticulate::conda_install(
+  packages = 'pdf2svg',
+  channels = c('conda-forge', 'bioconda', 'defaults'),
+  conda = 'auto',
+  additional_install_args = '--solver=libmamba'
+)
+```
+
+## Import modules
+
+```{python}
+import numpy as np
+import seqlogo
+
+#import function for building sequence motif & idenfitying seqs matching to motif
+from data_readers import get_fasta, get_gff
+from seq_ops import COMP_TRANS, reverse_complement, get_seq
+from motif_ops import build_pfm, build_pwm, score_kmer, pfm_ic
+```
+
+## Set working directory
+
+```{python}
+
+import random
+
+def softmax(x):
+    """Compute softmax values for each set of scores in x."""
+    e_x = np.exp(x - np.max(x))
+    return e_x / e_x.sum()
+
+def GibbsMotifFinder(sequences, k=10, iterations=1000, seed=42):
+    """
+    Runs the Gibbs Sampler to find a motif.
+    
+    Args:
+        sequences (list): List of DNA strings.
+        k (int): Length of the motif to find.
+        iterations (int): Number of sampling steps (burn-in + sampling).
+        seed (int): Random seed for reproducibility.
+        
+    Returns:
+        tuple: (final_motifs, information_content_history)
+    """
+    np.random.seed(seed)
+    random.seed(seed)
+    
+    num_seqs = len(sequences)
+    
+    # 1. Random Initialization
+    # Select a random k-mer from each sequence to start
+    current_motifs = []
+    for seq in sequences:
+        max_start = len(seq) - k
+        if max_start < 0:
+            raise ValueError(f"Sequence shorter than k={k}")
+        
+        rand_start = np.random.randint(0, max_start + 1)
+        current_motifs.append(seq[rand_start : rand_start + k])
+    
+    ic_history = []
+
+    # 2. Iterative Sampling
+    for it in range(iterations):
+        
+        # Select a holdout sequence index randomly
+        holdout_idx = np.random.randint(0, num_seqs)
+        holdout_seq = sequences[holdout_idx]
+        
+        # Create a subset of motifs excluding the holdout
+        subset_motifs = [current_motifs[i] for i in range(num_seqs) if i != holdout_idx]
+        
+        # Build PFM and PWM from the subset
+        pfm = build_pfm(subset_motifs, k)
+        pwm = build_pwm(pfm)
+        
+        # Track Information Content (Convergence metric)
+        current_ic = pfm_ic(pfm)
+        ic_history.append(current_ic)
+        
+        # Score all possible k-mers in the holdout sequence (score both Forward and Reverse Complement)
+        candidates = []
+        scores = []
+        
+        seq_len = len(holdout_seq)
+        
+        for start_idx in range(seq_len - k + 1):
+            # Forward k-mer
+            kmer_fwd = holdout_seq[start_idx : start_idx + k]
+            score_fwd = score_kmer(kmer_fwd, pwm)
+            
+            candidates.append(kmer_fwd)
+            scores.append(score_fwd)
+            
+            # Reverse Complement k-mer
+            kmer_rc = reverse_complement(kmer_fwd)
+            score_rc = score_kmer(kmer_rc, pwm)
+            
+            candidates.append(kmer_rc)
+            scores.append(score_rc)
+            
+        # Probabilistic Selection
+        scores_array = np.array(scores)
+        probabilities = softmax(scores_array)
+        
+        # Select a new motif based on these weighted probabilities
+        chosen_index = np.random.choice(len(candidates), p=probabilities)
+        new_motif = candidates[chosen_index]
+        
+        # Update the motif list
+        current_motifs[holdout_idx] = new_motif
+        
+        # Print progress every 100 iterations
+        if (it + 1) % 100 == 0:
+            print(f"Iteration {it+1}: IC = {current_ic:.4f}")
+    
+    ppfm = build_pfm(current_motifs, k)
+    return ppfm, ic_history
+  
+```
+
+## Generate a list of sequences for test
+
+```{python}
+# Here we test your Gibbs sampler.
+# You do not need to edit this or the section below. This is the Driver program
+
+#read promoters, store in a list of strings
+seq_file = "data/GCF_000009045.1_ASM904v1_genomic.fna"
+gff_file = "data/GCF_000009045.1_ASM904v1_genomic.gff"
+
+seqs = []
+
+for name, seq in get_fasta(seq_file): # For each entry in our FASTA file
+    for gff_entry in get_gff(gff_file): # For each entry in our GFF file
+        if gff_entry.type == 'CDS': # If this is a coding sequence
+            promoter_seq = get_seq(seq, gff_entry.start, gff_entry.end, gff_entry.strand, 50) # Extract 50 bp as a promoter
+    
+          
+            if "AGGAGG" in promoter_seq:
+                seqs.append(promoter_seq)
+
+# Run the gibbs sampler:
+promoter_pfm, ic_history = GibbsMotifFinder(seqs,10)
+# Plot the final pfm, SAVING it to a file instead of trying to display it
+seqlogo.seqlogo(seqlogo.CompletePm(pfm = promoter_pfm.T), 
+                file="motif_logo.png", 
+                format='png')
+```
